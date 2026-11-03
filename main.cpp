@@ -46,7 +46,8 @@ main
              << "-"
              << locale.toString(lastDate, QLocale::NarrowFormat)
              << " Page" << page;
-    qDebug() << "Status    :" << listing.transportError << "(" << listing.httpCode << ")";
+    qDebug() << "Failure   :" << static_cast<int>(listing.failure);
+    qDebug() << "Transport :" << listing.transportError << "(" << listing.httpCode << ")";
     qDebug() << "Error Text:" << listing.errorText;
     qDebug() << "Page      :" << listing.page;
     qDebug() << "Has more  :" << listing.hasMore;
@@ -64,8 +65,9 @@ main
 
         GarminPersonalAPI::ActivityDownload download = garminPersonalAPI.downloadService(entry.activityId);
         qDebug() << "=== DOWNLOAD" << download.activityId;
-        qDebug() << "Status    :" << download.transportError << "(" << download.httpCode << ")";
-        qDebug() << "Error Text:" << listing.errorText;
+        qDebug() << "Failure   :" << static_cast<int>(download.failure);
+        qDebug() << "Transport :" << download.transportError << "(" << download.httpCode << ")";
+        qDebug() << "Error Text:" << download.errorText;
         qDebug() << "data      :" << download.data.size();
     }
 
