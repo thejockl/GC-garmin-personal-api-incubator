@@ -44,6 +44,7 @@ public:
         Busy,            // another request in progress
         InvalidArgument, // bad date range, bad activity id
         Transport,       // network failure or timeout (see transportError)
+        Ssl,             // TLS handshake or certificate verification failed (see errorText)
         Http,            // server answered with a non-2xx status (see httpCode)
         Auth,            // 401/403: authentication or authorization denied
         InvalidReply     // 2xx, but unusable: bad JSON, not a ZIP, token not understood

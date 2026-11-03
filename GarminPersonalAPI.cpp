@@ -26,10 +26,14 @@
 #include <QJsonParseError>
 #include <QNetworkRequest>
 #include <QRegularExpression>
+#include <QSslError>
+#include <QSslSocket>
 #include <QScopedPointer>
 #include <QTimeZone>
 #include <QUrl>
 #include <QUrlQuery>
+#include <QStringList>
+
 #include <algorithm>
 
 
@@ -397,10 +401,8 @@ GarminPersonalAPI::ensureAccessToken
         if (stillValid) {
             return true;
         }
-        tokenFailure = lastTokenFailure;        // keeps its category, e.g. Auth
-        tokenFailure.errorText = tr("%1 (not retrying before %2)")
-                                   .arg(lastTokenFailure.errorText,
-                                        tokenRetryNotBefore.toLocalTime().toString("HH:mm:ss"));
+        tokenFailure = lastTokenFailure;
+        tokenFailure.errorText = tr("%1 (not retrying before %2)").arg(lastTokenFailure.errorText, tokenRetryNotBefore.toLocalTime().toString("HH:mm:ss"));
         return false;
     }
 
@@ -429,7 +431,7 @@ GarminPersonalAPI::ensureAccessToken
         return true;
     }
 
-    BasicReply f = res;     // keeps transportError, httpCode and the category set by execute()
+    BasicReply f = res;
     int blockSecs = otherFailureBlockSecs;
     if (res.isAuthError()) {
         f.errorText = tr("Garmin rejected the API key (HTTP %1). It is invalid, expired or deleted; create a new one in Garmin Connect (%2)")
@@ -437,7 +439,6 @@ GarminPersonalAPI::ensureAccessToken
                         .arg(garminCreateUrl);
         blockSecs = authFailureBlockSecs;
     } else if (res.hasError()) {
-        // Transport or Http: the category is already set
         f.errorText = tr("Could not obtain an access token: %1").arg(res.errorText);
     } else if (token.isEmpty()) {
         f.fail(Failure::InvalidReply, tr("Could not obtain an access token: the reply could not be understood"));
@@ -486,13 +487,23 @@ GarminPersonalAPI::execute
 {
     using ReplyPtr = QScopedPointer<QNetworkReply, QScopedPointerDeleteLater>;
 
+    if (! QSslSocket::supportsSsl()) {
+        HttpReply ret;
+        ret.fail(Failure::Ssl, tr("This build of Qt has no usable TLS support (available backends: %1)").arg(QSslSocket::availableBackends().join(", ")));
+        return ret;
+    }
+
     QNetworkRequest req(request);
     req.setTransferTimeout(timeoutMS);
 
     ReplyPtr reply(post ? manager->post(req, QByteArray()) : manager->get(req));
+
+    QList<QSslError> sslErrors;
+    connect(reply.get(), &QNetworkReply::sslErrors, reply.get(), [&sslErrors](const QList<QSslError> &errors) { sslErrors = errors; });
+
     if (! reply->isFinished()) {
         QEventLoop loop;
-        QObject::connect(reply.get(), &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        connect(reply.get(), &QNetworkReply::finished, &loop, &QEventLoop::quit);
         loop.exec();
     }
 
@@ -509,18 +520,35 @@ GarminPersonalAPI::execute
 
     const bool httpSuccess = ret.httpCode >= 200 && ret.httpCode <= 299;
     const bool httpAnswered = ret.httpCode != 0;
-    if (   ! httpAnswered
-        || (   httpSuccess
-            && ret.transportError != QNetworkReply::NoError)) {
-        ret.failure = Failure::Transport;
+    const bool sslFailure =    ! httpAnswered
+                            && (   ret.transportError == QNetworkReply::SslHandshakeFailedError
+                                || ! sslErrors.isEmpty());
+    if (sslFailure) {
+        QStringList details;
+        for (const QSslError &sslError : std::as_const(sslErrors)) {
+            details << sslError.errorString();
+        }
+        if (details.isEmpty()) {
+            details << reply->errorString();
+        }
+        details.removeDuplicates();
+
         ret.data.clear();
-        ret.errorText = (ret.transportError == QNetworkReply::TimeoutError)
-                          ? tr("Request timed out (no data for %1 s)").arg(timeoutMS / 1000)
-                          : tr("Network error: %1").arg(reply->errorString());
+        ret.fail(Failure::Ssl, tr("Could not establish a secure connection to Garmin (%1). Check that the system date and time are correct "
+                                  "and whether a proxy, VPN or security software intercepts HTTPS traffic").arg(details.join("; ")));
+        qDebug() << "TLS failure:" << details
+                 << "backend:" << QSslSocket::activeBackend()
+                 << QSslSocket::sslLibraryVersionString();
+    } else if (   ! httpAnswered
+               || (   httpSuccess
+                   && ret.transportError != QNetworkReply::NoError)) {
+        ret.data.clear();
+        ret.fail(Failure::Transport, (ret.transportError == QNetworkReply::TimeoutError)
+                                     ? tr("Request timed out (no data for %1 s)").arg(timeoutMS / 1000)
+                                     : tr("Network error: %1").arg(reply->errorString()));
     } else if (! httpSuccess) {
         ret.failure = (ret.httpCode == 401 || ret.httpCode == 403) ? Failure::Auth : Failure::Http;
         ret.errorText = describeHttpStatus(ret.httpCode, reply.get());
-
         if (   ret.contentType.contains("json", Qt::CaseInsensitive)
             || ret.contentType.startsWith("text/", Qt::CaseInsensitive)) {
             const QString snippet = QString::fromUtf8(ret.data.left(200)).simplified();
