@@ -42,6 +42,8 @@ namespace {
     const char * const tokenServicePath = "personalapitoken-service/personal-api/personal-api-key/token";
     const char * const listServicePath = "activitylist-service/activities/search/activities";
     const char * const downloadServicePath = "download-service/files/activity/";
+    const char * const hrvServicePath = "hrv-service/hrv/daily/%1/%2";
+    const char * const userSummaryServicePath = "usersummary-service/v2/dailysummaries";
 
     class BusyGuard
     {
@@ -304,6 +306,137 @@ GarminPersonalAPI::downloadService
         ret.fail(Failure::InvalidReply, tr("The reply is not a ZIP archive (content type: %1)").arg(reply.contentType));
     } else {
         ret.data = reply.data;
+    }
+
+    return ret;
+}
+
+
+GarminPersonalAPI::HrvListing
+GarminPersonalAPI::hrvService
+(const QDate &startDate, const QDate &endDate)
+{
+    HrvListing ret;
+
+    BusyGuard guard(requestInProgress);
+    if (! guard.acquired()) {
+        ret.fail(Failure::Busy, tr("Another Garmin request is already in progress"));
+        return ret;
+    }
+
+    if (   ! startDate.isValid()
+        || ! endDate.isValid()
+        || startDate > endDate) {
+        ret.fail(Failure::InvalidArgument, tr("Invalid date range"));
+        return ret;
+    }
+
+    QMap<QString, QString> query;
+
+    const QString expectedContentType = "application/json";
+    const HttpReply reply = getService(QString(hrvServicePath).arg(startDate.toString("yyyy-MM-dd"), endDate.toString("yyyy-MM-dd")), query, listTimeoutMS, expectedContentType);
+    static_cast<BasicReply &>(ret) = reply;
+    if (ret.hasError()) {
+        return ret;
+    }
+
+    if (! contentTypeIs(reply.contentType, expectedContentType)) {
+        ret.fail(Failure::InvalidReply, tr("Unexpected content type in reply: %1").arg(reply.contentType));
+        return ret;
+    }
+
+    QJsonParseError jsonError;
+    const QJsonDocument jsonDoc = QJsonDocument::fromJson(reply.data, &jsonError);
+    if (jsonError.error != QJsonParseError::NoError) {
+        ret.fail(Failure::InvalidReply, tr("Failed to parse JSON: %1").arg(jsonError.errorString()));
+        return ret;
+    }
+    if (! jsonDoc.isObject()) {
+        ret.fail(Failure::InvalidReply, tr("Invalid JSON: expected an object of hrv summaries"));
+        return ret;
+    }
+
+    const QJsonObject mainObj = jsonDoc.object();
+    const QJsonArray hrvArray = mainObj.value("hrvSummaries").toArray();
+    for (const QJsonValue &value : hrvArray) {
+        const QJsonObject dayObj = value.toObject();
+
+        HrvEntry hrvEntry;
+        hrvEntry.day = QDate::fromString(dayObj.value("calendarDate").toString(), "yyyy-MM-dd");
+        hrvEntry.lastNightAvg = dayObj.value("lastNightAvg").toInteger();
+        if (   hrvEntry.day.isValid()
+            && hrvEntry.day >= startDate
+            && hrvEntry.day <= endDate
+            && hrvEntry.lastNightAvg > 0) {
+            ret.hrvEntries << hrvEntry;
+        }
+    }
+
+    return ret;
+}
+
+
+GarminPersonalAPI::UserSummaryListing
+GarminPersonalAPI::userSummaryService
+(const QDate &startDate, const QDate &endDate)
+{
+    UserSummaryListing ret;
+
+    BusyGuard guard(requestInProgress);
+    if (! guard.acquired()) {
+        ret.fail(Failure::Busy, tr("Another Garmin request is already in progress"));
+        return ret;
+    }
+
+    if (   ! startDate.isValid()
+        || ! endDate.isValid()
+        || startDate > endDate) {
+        ret.fail(Failure::InvalidArgument, tr("Invalid date range"));
+        return ret;
+    }
+
+    QMap<QString, QString> query;
+    query.insert("startDate", startDate.toString("yyyy-MM-dd"));
+    query.insert("endDate", endDate.toString("yyyy-MM-dd"));
+
+    const QString expectedContentType = "application/json";
+    const HttpReply reply = getService(userSummaryServicePath, query, listTimeoutMS, expectedContentType);
+    static_cast<BasicReply &>(ret) = reply;
+    if (ret.hasError()) {
+        return ret;
+    }
+
+    if (! contentTypeIs(reply.contentType, expectedContentType)) {
+        ret.fail(Failure::InvalidReply, tr("Unexpected content type in reply: %1").arg(reply.contentType));
+        return ret;
+    }
+
+    QJsonParseError jsonError;
+    const QJsonDocument jsonDoc = QJsonDocument::fromJson(reply.data, &jsonError);
+    if (jsonError.error != QJsonParseError::NoError) {
+        ret.fail(Failure::InvalidReply, tr("Failed to parse JSON: %1").arg(jsonError.errorString()));
+        return ret;
+    }
+    if (! jsonDoc.isObject()) {
+        ret.fail(Failure::InvalidReply, tr("Invalid JSON: expected an object of user summaries"));
+        return ret;
+    }
+
+    const QJsonObject mainObj = jsonDoc.object();
+    const QJsonArray summaryArray = mainObj.value("data").toArray();
+    for (const QJsonValue &value : summaryArray) {
+        const QJsonObject dayObj = value.toObject();
+        const QJsonObject hrObj = dayObj.value("heartRate").toObject();
+
+        UserSummaryEntry userSummaryEntry;
+        userSummaryEntry.day = QDate::fromString(dayObj.value("calendarDate").toString(), "yyyy-MM-dd");
+        userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInteger();
+        if (   userSummaryEntry.day.isValid()
+            && userSummaryEntry.day >= startDate
+            && userSummaryEntry.day <= endDate
+            && userSummaryEntry.hrRestingValue > 0) {
+            ret.userSummaryEntries << userSummaryEntry;
+        }
     }
 
     return ret;

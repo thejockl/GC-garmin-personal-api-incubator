@@ -38,8 +38,9 @@ main
 
     QDate lastDate = QDate::currentDate();
     QDate firstDate = lastDate.addDays(-30);
-    const int page = 0;
     QLocale locale;
+
+    const int page = 0;
     GarminPersonalAPI::ActivityListing listing = garminPersonalAPI.activityListService(firstDate, lastDate, page);
     qDebug() << "=== ACTIVITY LISTING"
              << locale.toString(firstDate, QLocale::NarrowFormat)
@@ -71,10 +72,38 @@ main
         qDebug() << "data      :" << download.data.size();
     }
 
+    qDebug() << "=== HRV"
+             << locale.toString(firstDate, QLocale::NarrowFormat)
+             << "-"
+             << locale.toString(lastDate, QLocale::NarrowFormat);
+    GarminPersonalAPI::HrvListing hrvListing = garminPersonalAPI.hrvService(firstDate, lastDate);
+    qDebug() << "Failure   :" << static_cast<int>(hrvListing.failure);
+    qDebug() << "Transport :" << hrvListing.transportError << "(" << hrvListing.httpCode << ")";
+    qDebug() << "Error Text:" << hrvListing.errorText;
+    for (const GarminPersonalAPI::HrvEntry &entry : hrvListing.hrvEntries) {
+        qDebug() << "---" << entry.day;
+        qDebug() << "Last Night Avg:" << entry.lastNightAvg;
+    }
+
+    qDebug() << "=== User Summary"
+             << locale.toString(firstDate, QLocale::NarrowFormat)
+             << "-"
+             << locale.toString(lastDate, QLocale::NarrowFormat);
+    GarminPersonalAPI::UserSummaryListing userSummaryListing = garminPersonalAPI.userSummaryService(firstDate, lastDate);
+    qDebug() << "Failure   :" << static_cast<int>(userSummaryListing.failure);
+    qDebug() << "Transport :" << userSummaryListing.transportError << "(" << userSummaryListing.httpCode << ")";
+    qDebug() << "Error Text:" << userSummaryListing.errorText;
+    for (const GarminPersonalAPI::UserSummaryEntry &entry : userSummaryListing.userSummaryEntries) {
+        qDebug() << "---" << entry.day;
+        qDebug() << "Resting Value:" << entry.hrRestingValue;
+    }
+
+#if 0
     qDebug() << "=== Credentials";
     qDebug() << "Access Token:" << garminPersonalAPI.getAccessToken();
     qDebug() << "Last Refresh:" << locale.toString(garminPersonalAPI.getTokenLastRefresh(), QLocale::NarrowFormat);
     qDebug() << "Token Expiry:" << locale.toString(garminPersonalAPI.getTokenExpiry(), QLocale::NarrowFormat);
+#endif
 
     return 0;
 }

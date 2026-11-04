@@ -97,11 +97,31 @@ public:
         QByteArray data;    // ZIP-data
     };
 
+    struct HrvEntry {
+        QDate day;
+        int lastNightAvg = 0;
+    };
+
+    struct HrvListing : public BasicReply {
+        QList<HrvEntry> hrvEntries;
+    };
+
+    struct UserSummaryEntry {
+        QDate day;
+        int hrRestingValue = 0;
+    };
+
+    struct UserSummaryListing : public BasicReply {
+        QList<UserSummaryEntry> userSummaryEntries;
+    };
+
     explicit GarminPersonalAPI(const QString &key, const QString &token = QString(), const QDateTime &tokenLastRefresh = QDateTime(), QObject *parent = nullptr);
 
     // Services
     ActivityListing activityListService(const QDate &startDate, const QDate &endDate, int page = 0);
     ActivityDownload downloadService(const QString &activityId);
+    HrvListing hrvService(const QDate &startDate, const QDate &endDate);
+    UserSummaryListing userSummaryService(const QDate &startDate, const QDate &endDate);
 
     QString getAccessToken() const;
     QDateTime getTokenLastRefresh() const;
