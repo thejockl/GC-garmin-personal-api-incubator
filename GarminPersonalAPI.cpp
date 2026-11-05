@@ -443,17 +443,62 @@ GarminPersonalAPI::userSummaryService
     for (const QJsonValue &value : summaryArray) {
         const QJsonObject dayObj = value.toObject();
         const QJsonObject hrObj = dayObj.value("heartRate").toObject();
+        const QJsonObject calObj = dayObj.value("calories").toObject();
         const QJsonObject bbObj = dayObj.value("bodyBattery").toObject();
+        const QJsonObject intObj = dayObj.value("intensityMinutes").toObject();
+        const QJsonObject strObj = dayObj.value("stress").toObject();
+        const QJsonObject movObj = dayObj.value("movement").toObject();
+        const QJsonObject stepObj = movObj.value("steps").toObject();
+        const QJsonObject pushObj = movObj.value("pushes").toObject();
+        const QJsonObject faObj = movObj.value("floorsAscended").toObject();
+        const QJsonObject fdObj = movObj.value("floorsDescended").toObject();
 
         QDate day = dateFromString(dayObj.value("calendarDate").toString());
         UserSummaryEntry userSummaryEntry;
+
+        userSummaryEntry.hrMinValue = hrObj.value("minValue").toInteger();
+        userSummaryEntry.hrMaxValue = hrObj.value("maxValue").toInteger();
         userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInteger();
+
+        userSummaryEntry.calBurnedResting = calObj.value("burnedResting").toInteger();
+        userSummaryEntry.calBurnedActive = calObj.value("burnedActive").toInteger();
+        userSummaryEntry.calBurnedTotal = calObj.value("burnedTotal").toInteger();
+
+        userSummaryEntry.bbMinValue = bbObj.value("minValue").toInteger();
         userSummaryEntry.bbMaxValue = bbObj.value("maxValue").toInteger();
+        userSummaryEntry.bbChargedValue = bbObj.value("chargedValue").toInteger();
+        userSummaryEntry.bbDrainedValue = bbObj.value("drainedValue").toInteger();
+        userSummaryEntry.bbEndOfDayValue = bbObj.value("endOfDayValue").toInteger();
+
+        userSummaryEntry.intModerate = intObj.value("moderate").toInteger();
+        userSummaryEntry.intVigorous = intObj.value("vigorous").toInteger();
+
+        userSummaryEntry.strAvgLevel = strObj.value("avgLevel").toInteger();
+        userSummaryEntry.strMaxLevel = strObj.value("maxLevel").toInteger();
+        userSummaryEntry.strTotalDuration = strObj.value("totalDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strRestDuration = strObj.value("restDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strActivityDuration = strObj.value("activityDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strUncategorizedDuration = strObj.value("uncategorizedDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strLowStressDuration = strObj.value("lowStressDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strMediumStressDuration = strObj.value("mediumStressDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strHighStressDuration = strObj.value("highStressDurationInMillis").toDouble() / 1000.0;
+
+        userSummaryEntry.movStepsGoal = stepObj.value("goal").toInteger();
+        userSummaryEntry.movSteps = stepObj.value("value").toInteger();
+        userSummaryEntry.movStepsDist = stepObj.value("distanceInMeters").toDouble();
+        userSummaryEntry.movPushesGoal = pushObj.value("goal").toInteger();
+        userSummaryEntry.movPushes = pushObj.value("value").toInteger();
+        userSummaryEntry.movPushesDist = pushObj.value("distanceInMeters").toDouble();
+        userSummaryEntry.movFloorsAscGoal = faObj.value("goal").toInteger();
+        userSummaryEntry.movFloorsAsc = faObj.value("value").toInteger();
+        userSummaryEntry.movFloorsAscDist = faObj.value("distanceInMeters").toDouble();
+        userSummaryEntry.movFloorsDescGoal = fdObj.value("goal").toInteger();
+        userSummaryEntry.movFloorsDesc = fdObj.value("value").toInteger();
+        userSummaryEntry.movFloorsDescDist = fdObj.value("distanceInMeters").toDouble();
+
         if (   day.isValid()
             && day >= startDate
-            && day <= endDate
-            && (   userSummaryEntry.hrRestingValue > 0
-                || userSummaryEntry.bbMaxValue > 0)) {
+            && day <= endDate) {
             ret.userSummaryEntries.insert(day, userSummaryEntry);
         }
     }

@@ -107,10 +107,50 @@ public:
 
     struct UserSummaryEntry {
         // Heartrate
+        int hrMinValue = 0;
+        int hrMaxValue = 0;
         int hrRestingValue = 0;
 
+        // Calories
+        int calBurnedResting = 0;
+        int calBurnedActive = 0;
+        int calBurnedTotal = 0;
+
         // Bodybattery
+        int bbMinValue = 0;
         int bbMaxValue = 0;
+        int bbChargedValue = 0;
+        int bbDrainedValue = 0;
+        int bbEndOfDayValue = 0;
+
+        // Intensity
+        int intModerate = 0;
+        int intVigorous = 0;
+
+        // Stress
+        int strAvgLevel = 0;
+        int strMaxLevel = 0;
+        double strTotalDuration = 0.0;          // seconds
+        double strRestDuration = 0.0;           // seconds
+        double strActivityDuration = 0.0;       // seconds
+        double strUncategorizedDuration = 0.0;  // seconds
+        double strLowStressDuration = 0.0;      // seconds
+        double strMediumStressDuration = 0.0;   // seconds
+        double strHighStressDuration = 0.0;     // seconds
+
+        // Movement
+        int movStepsGoal = 0;
+        int movSteps = 0;
+        double movStepsDist = 0.0;      // meters
+        int movPushesGoal = 0;
+        int movPushes = 0;
+        double movPushesDist = 0.0;     // meters
+        int movFloorsAscGoal = 0;
+        int movFloorsAsc = 0;
+        double movFloorsAscDist = 0.0;  // meters
+        int movFloorsDescGoal = 0;
+        int movFloorsDesc = 0;
+        double movFloorsDescDist = 0.0; // meters
     };
 
     struct UserSummaryListing : public BasicReply {

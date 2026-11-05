@@ -37,9 +37,10 @@ main
     GarminPersonalAPI garminPersonalAPI(apiKey);
 
     QDate lastDate = QDate::currentDate();
-    QDate firstDate = lastDate.addDays(-30);
+    QDate firstDate = lastDate.addDays(-10);
     QLocale locale;
 
+#if 0
     const int page = 0;
     GarminPersonalAPI::ActivityListing listing = garminPersonalAPI.activityListService(firstDate, lastDate, page);
     qDebug() << "=== ACTIVITY LISTING"
@@ -71,6 +72,7 @@ main
         qDebug() << "Error Text:" << download.errorText;
         qDebug() << "data      :" << download.data.size();
     }
+#endif
 
     GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Hrv | GarminPersonalAPI::UserSummary);
     bool hasHrv = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
@@ -90,8 +92,40 @@ main
             qDebug() << "HRV Last Night Avg:" << entry.hrv.lastNightAvg;
         }
         if (hasUserSummary) {
-            qDebug() << "HR Resting Value  :" << entry.userSummary.hrRestingValue;
-            qDebug() << "BB Max Value      :" << entry.userSummary.bbMaxValue;
+            qDebug() << "HR Min Value         :" << entry.userSummary.hrMinValue;
+            qDebug() << "HR Max Value         :" << entry.userSummary.hrMaxValue;
+            qDebug() << "HR Resting Value     :" << entry.userSummary.hrRestingValue;
+            qDebug() << "Cal Burned Resting   :" << entry.userSummary.calBurnedResting;
+            qDebug() << "Cal Burned Active    :" << entry.userSummary.calBurnedActive;
+            qDebug() << "Cal Burned Total     :" << entry.userSummary.calBurnedTotal;
+            qDebug() << "BB Min Value         :" << entry.userSummary.bbMinValue;
+            qDebug() << "BB Max Value         :" << entry.userSummary.bbMaxValue;
+            qDebug() << "BB Charged Value     :" << entry.userSummary.bbChargedValue;
+            qDebug() << "BB Drained Value     :" << entry.userSummary.bbDrainedValue;
+            qDebug() << "BB EOD Value         :" << entry.userSummary.bbEndOfDayValue;
+            qDebug() << "Int Moderate         :" << entry.userSummary.intModerate;
+            qDebug() << "Int Vigorous         :" << entry.userSummary.intVigorous;
+            qDebug() << "Str Avg Level        :" << entry.userSummary.strAvgLevel;
+            qDebug() << "Str Max Level        :" << entry.userSummary.strMaxLevel;
+            qDebug() << "Str Total secs       :" << entry.userSummary.strTotalDuration;
+            qDebug() << "Str Rest secs        :" << entry.userSummary.strRestDuration;
+            qDebug() << "Str Act secs         :" << entry.userSummary.strActivityDuration;
+            qDebug() << "Str uncat secs       :" << entry.userSummary.strUncategorizedDuration;
+            qDebug() << "Str low secs         :" << entry.userSummary.strLowStressDuration;
+            qDebug() << "Str med secs         :" << entry.userSummary.strMediumStressDuration;
+            qDebug() << "Str high secs        :" << entry.userSummary.strHighStressDuration;
+            qDebug() << "Mov steps goal       :" << entry.userSummary.movStepsGoal;
+            qDebug() << "Mov steps            :" << entry.userSummary.movSteps;
+            qDebug() << "Mov steps dist       :" << entry.userSummary.movStepsDist;
+            qDebug() << "Mov pushes goal      :" << entry.userSummary.movPushesGoal;
+            qDebug() << "Mov pushes           :" << entry.userSummary.movPushes;
+            qDebug() << "Mov pushes dist      :" << entry.userSummary.movPushesDist;
+            qDebug() << "Mov floors asc goal  :" << entry.userSummary.movFloorsAscGoal;
+            qDebug() << "Mov floors asc       :" << entry.userSummary.movFloorsAsc;
+            qDebug() << "Mov floors asc dist  :" << entry.userSummary.movFloorsAscDist;
+            qDebug() << "Mov floors desc goal :" << entry.userSummary.movFloorsDescGoal;
+            qDebug() << "Mov floors desc      :" << entry.userSummary.movFloorsDesc;
+            qDebug() << "Mov floors desc dist :" << entry.userSummary.movFloorsDescDist;
         }
     }
 
