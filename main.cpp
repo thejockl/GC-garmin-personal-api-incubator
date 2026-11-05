@@ -74,10 +74,11 @@ main
     }
 #endif
 
-    GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Sleep);
+    GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Sleep | GarminPersonalAPI::Hrv | GarminPersonalAPI::UserSummary | GarminPersonalAPI::Weight);
     bool hasHrv = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
     bool hasUserSummary = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary);
     bool hasSleep = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Sleep);
+    bool hasWeight = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Weight);
     qDebug() << "=== Athlete Metrics"
              << locale.toString(firstDate, QLocale::NarrowFormat)
              << "-"
@@ -88,10 +89,11 @@ main
     qDebug() << "HRV available         :" << hasHrv;
     qDebug() << "User summary available:" << hasUserSummary;
     qDebug() << "Sleep available       :" << hasSleep;
+    qDebug() << "Weight available      :" << hasWeight;
     for (auto [day, entry] : athleteMetrics.metrics.asKeyValueRange()) {
         qDebug() << "---" << day;
         if (hasHrv) {
-            qDebug() << "HRV Last Night Avg:" << entry.hrv.lastNightAvg;
+            qDebug() << "HRV Last Night Avg   :" << entry.hrv.lastNightAvg;
         }
         if (hasUserSummary) {
             qDebug() << "HR Min Value         :" << entry.userSummary.hrMinValue;
@@ -130,6 +132,8 @@ main
             qDebug() << "Mov floors desc dist :" << entry.userSummary.movFloorsDescDist;
         }
         if (hasSleep) {
+            qDebug() << "Sleep sleep time     :" << entry.sleep.sleepTime;
+            qDebug() << "Sleep nap time       :" << entry.sleep.napTime;
             qDebug() << "Sleep unmeasurable   :" << entry.sleep.unmeasurableSleep;
             qDebug() << "Sleep deep           :" << entry.sleep.deepSleep;
             qDebug() << "Sleep light          :" << entry.sleep.lightSleep;
@@ -142,6 +146,20 @@ main
             qDebug() << "Sleep avg stress     :" << entry.sleep.avgSleepStress;
             qDebug() << "Sleep avg hr         :" << entry.sleep.avgHR;
             qDebug() << "Sleep Score          :" << entry.sleep.scoreOverall;
+        }
+        if (hasWeight) {
+            qDebug() << "Wght time UTC        :" << locale.toString(entry.weight.startTime, QLocale::NarrowFormat);
+            qDebug() << "Wght time Local      :" << locale.toString(entry.weight.startTimeLocal, QLocale::NarrowFormat);
+            qDebug() << "Wght weight          :" << entry.weight.weight;
+            qDebug() << "Wght BMI             :" << entry.weight.bmi;
+            qDebug() << "Wght body fat        :" << entry.weight.bodyFat;
+            qDebug() << "Wght body water      :" << entry.weight.bodyWater;
+            qDebug() << "Wght bone mass       :" << entry.weight.boneMass;
+            qDebug() << "Wght muscle mass     :" << entry.weight.muscleMass;
+            qDebug() << "Wght physique rating :" << entry.weight.physiqueRating;
+            qDebug() << "Wght visceral fat    :" << entry.weight.visceralFat;
+            qDebug() << "Wght metabolic age   :" << entry.weight.metabolicAge;
+            qDebug() << "Wght weight delta    :" << entry.weight.weightDelta;
         }
     }
 

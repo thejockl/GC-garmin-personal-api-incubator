@@ -130,13 +130,13 @@ public:
         // Stress
         int strAvgLevel = 0;
         int strMaxLevel = 0;
-        double strTotalDuration = 0.0;          // seconds
-        double strRestDuration = 0.0;           // seconds
-        double strActivityDuration = 0.0;       // seconds
-        double strUncategorizedDuration = 0.0;  // seconds
-        double strLowStressDuration = 0.0;      // seconds
-        double strMediumStressDuration = 0.0;   // seconds
-        double strHighStressDuration = 0.0;     // seconds
+        int strTotalDuration = 0;          // seconds
+        int strRestDuration = 0;           // seconds
+        int strActivityDuration = 0;       // seconds
+        int strUncategorizedDuration = 0;  // seconds
+        int strLowStressDuration = 0;      // seconds
+        int strMediumStressDuration = 0;   // seconds
+        int strHighStressDuration = 0;     // seconds
 
         // Movement
         int movStepsGoal = 0;
@@ -158,18 +158,20 @@ public:
     };
 
     struct SleepEntry {
+        int sleepTime = 0;          // seconds
+        int napTime = 0;            // seconds
         int unmeasurableSleep = 0;  // seconds
         int deepSleep = 0;          // seconds
         int lightSleep = 0;         // seconds
         int remSleep = 0;           // seconds
         int awakeSleep = 0;         // seconds
 
-        int avgRespiration = 0;
-        int lowestRespiration = 0;
-        int highestRespiration = 0;
+        double avgRespiration = 0.0;
+        double lowestRespiration = 0.0;
+        double highestRespiration = 0;
         int awakeCount = 0;
-        int avgSleepStress = 0;
-        int avgHR = 0;
+        double avgSleepStress = 0;
+        double avgHR = 0;
 
         int scoreOverall = 0;
     };
@@ -178,11 +180,31 @@ public:
         QMap<QDate, SleepEntry> sleepEntries;
     };
 
+    struct WeightEntry {
+        QDateTime startTime;      // UTC
+        QDateTime startTimeLocal; // local Time
+        double weight = 0.0;      // kg
+        double bmi = 0.0;
+        double bodyFat = 0.0;
+        double bodyWater = 0.0;
+        int boneMass = 0;
+        int muscleMass = 0;
+        int physiqueRating = 0;
+        int visceralFat = 0;
+        double metabolicAge = 0.0;
+        double weightDelta = 0.0;
+    };
+
+    struct WeightListing : public BasicReply {
+        QMap<QDate, WeightEntry> weightEntries;
+    };
+
     enum Metric {
         NoData = 0x0,
         Hrv = 0x1,
         UserSummary = 0x2,
         Sleep = 0x4,
+        Weight = 0x8,
     };
     Q_DECLARE_FLAGS(Metrics, Metric)
 
@@ -190,6 +212,7 @@ public:
         HrvEntry hrv;
         UserSummaryEntry userSummary;
         SleepEntry sleep;
+        WeightEntry weight;
     };
 
     struct AthleteMetricsListing : public BasicReply {
@@ -206,6 +229,7 @@ public:
     HrvListing hrvService(const QDate &startDate, const QDate &endDate);
     UserSummaryListing userSummaryService(const QDate &startDate, const QDate &endDate);
     SleepListing sleepService(const QDate &startDate, const QDate &endDate);
+    WeightListing weightService(const QDate &startDate, const QDate &endDate);
 
     // Combined athlete metrics
     AthleteMetricsListing athleteMetrics(const QDate &startDate, const QDate &endDate, Metrics metrics);

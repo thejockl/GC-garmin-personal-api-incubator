@@ -45,6 +45,7 @@ namespace {
     const char * const hrvServicePath = "hrv-service/hrv/daily/%1/%2";
     const char * const userSummaryServicePath = "usersummary-service/v2/dailysummaries";
     const char * const sleepServicePath = "sleep-service/sleep/dailySleepSummariesByDate";
+    const char * const weightServicePath = "weight-service/weight/all/%1/%2";
 
     class BusyGuard
     {
@@ -264,7 +265,7 @@ GarminPersonalAPI::activityListService
     for (const QJsonValue &value : jsonArr) {
         const QJsonObject activityObj = value.toObject();
 
-        const qint64 id = activityObj.value("activityId").toInteger();
+        const qint64 id = activityObj.value("activityId").toInt();
         if (id <= 0) {
             qWarning() << "Garmin activity listing: skipping entry without activityId";
             continue;
@@ -380,7 +381,7 @@ GarminPersonalAPI::hrvService
 
         QDate day = dateFromString(dayObj.value("calendarDate").toString());
         HrvEntry hrvEntry;
-        hrvEntry.lastNightAvg = dayObj.value("lastNightAvg").toInteger();
+        hrvEntry.lastNightAvg = dayObj.value("lastNightAvg").toInt();
         if (   day.isValid()
             && day >= startDate
             && day <= endDate
@@ -457,44 +458,44 @@ GarminPersonalAPI::userSummaryService
         QDate day = dateFromString(dayObj.value("calendarDate").toString());
         UserSummaryEntry userSummaryEntry;
 
-        userSummaryEntry.hrMinValue = hrObj.value("minValue").toInteger();
-        userSummaryEntry.hrMaxValue = hrObj.value("maxValue").toInteger();
-        userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInteger();
+        userSummaryEntry.hrMinValue = hrObj.value("minValue").toInt();
+        userSummaryEntry.hrMaxValue = hrObj.value("maxValue").toInt();
+        userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInt();
 
-        userSummaryEntry.calBurnedResting = calObj.value("burnedResting").toInteger();
-        userSummaryEntry.calBurnedActive = calObj.value("burnedActive").toInteger();
-        userSummaryEntry.calBurnedTotal = calObj.value("burnedTotal").toInteger();
+        userSummaryEntry.calBurnedResting = calObj.value("burnedResting").toInt();
+        userSummaryEntry.calBurnedActive = calObj.value("burnedActive").toInt();
+        userSummaryEntry.calBurnedTotal = calObj.value("burnedTotal").toInt();
 
-        userSummaryEntry.bbMinValue = bbObj.value("minValue").toInteger();
-        userSummaryEntry.bbMaxValue = bbObj.value("maxValue").toInteger();
-        userSummaryEntry.bbChargedValue = bbObj.value("chargedValue").toInteger();
-        userSummaryEntry.bbDrainedValue = bbObj.value("drainedValue").toInteger();
-        userSummaryEntry.bbEndOfDayValue = bbObj.value("endOfDayValue").toInteger();
+        userSummaryEntry.bbMinValue = bbObj.value("minValue").toInt();
+        userSummaryEntry.bbMaxValue = bbObj.value("maxValue").toInt();
+        userSummaryEntry.bbChargedValue = bbObj.value("chargedValue").toInt();
+        userSummaryEntry.bbDrainedValue = bbObj.value("drainedValue").toInt();
+        userSummaryEntry.bbEndOfDayValue = bbObj.value("endOfDayValue").toInt();
 
-        userSummaryEntry.intModerate = intObj.value("moderate").toInteger();
-        userSummaryEntry.intVigorous = intObj.value("vigorous").toInteger();
+        userSummaryEntry.intModerate = intObj.value("moderate").toInt();
+        userSummaryEntry.intVigorous = intObj.value("vigorous").toInt();
 
-        userSummaryEntry.strAvgLevel = strObj.value("avgLevel").toInteger();
-        userSummaryEntry.strMaxLevel = strObj.value("maxLevel").toInteger();
-        userSummaryEntry.strTotalDuration = strObj.value("totalDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strRestDuration = strObj.value("restDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strActivityDuration = strObj.value("activityDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strUncategorizedDuration = strObj.value("uncategorizedDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strLowStressDuration = strObj.value("lowStressDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strMediumStressDuration = strObj.value("mediumStressDurationInMillis").toDouble() / 1000.0;
-        userSummaryEntry.strHighStressDuration = strObj.value("highStressDurationInMillis").toDouble() / 1000.0;
+        userSummaryEntry.strAvgLevel = strObj.value("avgLevel").toInt();
+        userSummaryEntry.strMaxLevel = strObj.value("maxLevel").toInt();
+        userSummaryEntry.strTotalDuration = strObj.value("totalDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strRestDuration = strObj.value("restDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strActivityDuration = strObj.value("activityDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strUncategorizedDuration = strObj.value("uncategorizedDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strLowStressDuration = strObj.value("lowStressDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strMediumStressDuration = strObj.value("mediumStressDurationInMillis").toInt() / 1000.0;
+        userSummaryEntry.strHighStressDuration = strObj.value("highStressDurationInMillis").toInt() / 1000.0;
 
-        userSummaryEntry.movStepsGoal = stepObj.value("goal").toInteger();
-        userSummaryEntry.movSteps = stepObj.value("value").toInteger();
+        userSummaryEntry.movStepsGoal = stepObj.value("goal").toInt();
+        userSummaryEntry.movSteps = stepObj.value("value").toInt();
         userSummaryEntry.movStepsDist = stepObj.value("distanceInMeters").toDouble();
-        userSummaryEntry.movPushesGoal = pushObj.value("goal").toInteger();
-        userSummaryEntry.movPushes = pushObj.value("value").toInteger();
+        userSummaryEntry.movPushesGoal = pushObj.value("goal").toInt();
+        userSummaryEntry.movPushes = pushObj.value("value").toInt();
         userSummaryEntry.movPushesDist = pushObj.value("distanceInMeters").toDouble();
-        userSummaryEntry.movFloorsAscGoal = faObj.value("goal").toInteger();
-        userSummaryEntry.movFloorsAsc = faObj.value("value").toInteger();
+        userSummaryEntry.movFloorsAscGoal = faObj.value("goal").toInt();
+        userSummaryEntry.movFloorsAsc = faObj.value("value").toInt();
         userSummaryEntry.movFloorsAscDist = faObj.value("distanceInMeters").toDouble();
-        userSummaryEntry.movFloorsDescGoal = fdObj.value("goal").toInteger();
-        userSummaryEntry.movFloorsDesc = fdObj.value("value").toInteger();
+        userSummaryEntry.movFloorsDescGoal = fdObj.value("goal").toInt();
+        userSummaryEntry.movFloorsDesc = fdObj.value("value").toInt();
         userSummaryEntry.movFloorsDescDist = fdObj.value("distanceInMeters").toDouble();
 
         if (   day.isValid()
@@ -559,31 +560,106 @@ GarminPersonalAPI::sleepService
         const QJsonObject dayObj = value.toObject();
         const QJsonObject scObj = dayObj.value("sleepScores").toObject();
         const QJsonObject scOvObj = scObj.value("overall").toObject();
-        qDebug() << "sleepScores" << scObj;
-        qDebug() << "sleepScore overall" << scOvObj;
 
         QDate day = dateFromString(dayObj.value("calendarDate").toString());
         SleepEntry sleepEntry;
 
-        sleepEntry.unmeasurableSleep = dayObj.value("unmeasurableSleepSeconds").toInteger();
-        sleepEntry.deepSleep = dayObj.value("deepSleepSeconds").toInteger();
-        sleepEntry.lightSleep = dayObj.value("lightSleepSeconds").toInteger();
-        sleepEntry.remSleep = dayObj.value("remSleepSeconds").toInteger();
-        sleepEntry.awakeSleep = dayObj.value("awakeSleepSeconds").toInteger();
+        sleepEntry.sleepTime = dayObj.value("sleepTimeSeconds").toInt();
+        sleepEntry.napTime = dayObj.value("napTimeSeconds").toInt();
+        sleepEntry.unmeasurableSleep = dayObj.value("unmeasurableSleepSeconds").toInt();
+        sleepEntry.deepSleep = dayObj.value("deepSleepSeconds").toInt();
+        sleepEntry.lightSleep = dayObj.value("lightSleepSeconds").toInt();
+        sleepEntry.remSleep = dayObj.value("remSleepSeconds").toInt();
+        sleepEntry.awakeSleep = dayObj.value("awakeSleepSeconds").toInt();
 
-        sleepEntry.avgRespiration = dayObj.value("averageRespirationValue").toInteger();
-        sleepEntry.lowestRespiration = dayObj.value("lowestRespirationValue").toInteger();
-        sleepEntry.highestRespiration = dayObj.value("highestRespirationValue").toInteger();
-        sleepEntry.awakeCount = dayObj.value("awakeCount").toInteger();
-        sleepEntry.avgSleepStress = dayObj.value("avgSleepStress").toInteger();
-        sleepEntry.avgHR = dayObj.value("avgHeartRate").toInteger();
+        sleepEntry.avgRespiration = dayObj.value("averageRespirationValue").toDouble();
+        sleepEntry.lowestRespiration = dayObj.value("lowestRespirationValue").toDouble();
+        sleepEntry.highestRespiration = dayObj.value("highestRespirationValue").toDouble();
+        sleepEntry.awakeCount = dayObj.value("awakeCount").toInt();
+        sleepEntry.avgSleepStress = dayObj.value("avgSleepStress").toDouble();
+        sleepEntry.avgHR = dayObj.value("avgHeartRate").toDouble();
 
-        sleepEntry.scoreOverall = scOvObj.value("value").toInteger();
+        sleepEntry.scoreOverall = scOvObj.value("value").toInt();
 
         if (   day.isValid()
             && day >= startDate
             && day <= endDate) {
             ret.sleepEntries.insert(day, sleepEntry);
+        }
+    }
+
+    return ret;
+}
+
+
+GarminPersonalAPI::WeightListing
+GarminPersonalAPI::weightService
+(const QDate &startDate, const QDate &endDate)
+{
+    WeightListing ret;
+
+    BusyGuard guard(requestInProgress);
+    if (! guard.acquired()) {
+        ret.fail(Failure::Busy, tr("Another Garmin request is already in progress"));
+        return ret;
+    }
+
+    if (   ! startDate.isValid()
+        || ! endDate.isValid()
+        || startDate > endDate) {
+        ret.fail(Failure::InvalidArgument, tr("Invalid date range"));
+        return ret;
+    }
+
+    QMap<QString, QString> query;
+
+    const QString expectedContentType = "application/json";
+    const HttpReply reply = getService(QString(weightServicePath).arg(dateToString(startDate), dateToString(endDate)), query, listTimeoutMS, expectedContentType);
+    static_cast<BasicReply &>(ret) = reply;
+    if (ret.hasError()) {
+        return ret;
+    }
+
+    if (! contentTypeIs(reply.contentType, expectedContentType)) {
+        ret.fail(Failure::InvalidReply, tr("Unexpected content type in reply: %1").arg(reply.contentType));
+        return ret;
+    }
+
+    QJsonParseError jsonError;
+    const QJsonDocument jsonDoc = QJsonDocument::fromJson(reply.data, &jsonError);
+    if (jsonError.error != QJsonParseError::NoError) {
+        ret.fail(Failure::InvalidReply, tr("Failed to parse JSON: %1").arg(jsonError.errorString()));
+        return ret;
+    }
+    if (! jsonDoc.isArray()) {
+        ret.fail(Failure::InvalidReply, tr("Invalid JSON: expected an array of weight summaries"));
+        return ret;
+    }
+
+    const QJsonArray weightArray = jsonDoc.array();
+    for (const QJsonValue &value : weightArray) {
+        const QJsonObject dayObj = value.toObject();
+
+        QDate day = dateFromString(dayObj.value("calendarDate").toString());
+        WeightEntry entry;
+
+        entry.startTime = QDateTime::fromString(dayObj.value("timeStampGMT").toString(), Qt::ISODateWithMs);
+        entry.startTimeLocal = QDateTime::fromString(dayObj.value("date").toString(), Qt::ISODateWithMs);
+        entry.weight = dayObj.value("weight").toDouble();
+        entry.bmi = dayObj.value("bmi").toDouble();
+        entry.bodyFat = dayObj.value("bodyFat").toDouble();
+        entry.bodyWater = dayObj.value("bodyWater").toDouble();
+        entry.boneMass = dayObj.value("boneMass").toInt();
+        entry.muscleMass = dayObj.value("muscleMass").toInt();
+        entry.physiqueRating = dayObj.value("physiqueRating").toInt();
+        entry.visceralFat = dayObj.value("visceralFat").toInt();
+        entry.metabolicAge = dayObj.value("metabolicAge").toDouble();
+        entry.weightDelta = dayObj.value("weightDelta").toDouble();
+
+        if (   day.isValid()
+            && day >= startDate
+            && day <= endDate) {
+            ret.weightEntries.insert(day, entry);
         }
     }
 
@@ -623,6 +699,16 @@ GarminPersonalAPI::athleteMetrics
             ret.availableMetrics |= Metric::Sleep;
             for (auto [day, sleep] : sleepListing.sleepEntries.asKeyValueRange()) {
                 ret.metrics[day].sleep = sleep;
+            }
+        }
+    }
+    if (ret.failure == Failure::None && metrics.testFlag(Metric::Weight)) {
+        WeightListing weightListing = weightService(startDate, endDate);
+        static_cast<BasicReply &>(ret) = weightListing;
+        if (weightListing.failure == Failure::None) {
+            ret.availableMetrics |= Metric::Weight;
+            for (auto [day, weight] : weightListing.weightEntries.asKeyValueRange()) {
+                ret.metrics[day].weight = weight;
             }
         }
     }
