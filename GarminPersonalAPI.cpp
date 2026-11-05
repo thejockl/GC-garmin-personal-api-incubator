@@ -443,14 +443,17 @@ GarminPersonalAPI::userSummaryService
     for (const QJsonValue &value : summaryArray) {
         const QJsonObject dayObj = value.toObject();
         const QJsonObject hrObj = dayObj.value("heartRate").toObject();
+        const QJsonObject bbObj = dayObj.value("bodyBattery").toObject();
 
         QDate day = dateFromString(dayObj.value("calendarDate").toString());
         UserSummaryEntry userSummaryEntry;
         userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInteger();
+        userSummaryEntry.bbMaxValue = bbObj.value("maxValue").toInteger();
         if (   day.isValid()
             && day >= startDate
             && day <= endDate
-            && userSummaryEntry.hrRestingValue > 0) {
+            && (   userSummaryEntry.hrRestingValue > 0
+                || userSummaryEntry.bbMaxValue > 0)) {
             ret.userSummaryEntries.insert(day, userSummaryEntry);
         }
     }

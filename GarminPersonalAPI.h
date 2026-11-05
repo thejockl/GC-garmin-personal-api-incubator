@@ -106,7 +106,11 @@ public:
     };
 
     struct UserSummaryEntry {
+        // Heartrate
         int hrRestingValue = 0;
+
+        // Bodybattery
+        int bbMaxValue = 0;
     };
 
     struct UserSummaryListing : public BasicReply {

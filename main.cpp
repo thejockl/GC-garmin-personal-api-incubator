@@ -73,6 +73,8 @@ main
     }
 
     GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Hrv | GarminPersonalAPI::UserSummary);
+    bool hasHrv = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
+    bool hasUserSummary = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary);
     qDebug() << "=== Athlete Metrics"
              << locale.toString(firstDate, QLocale::NarrowFormat)
              << "-"
@@ -80,15 +82,16 @@ main
     qDebug() << "Failure               :" << static_cast<int>(athleteMetrics.failure);
     qDebug() << "Transport             :" << athleteMetrics.transportError << "(" << athleteMetrics.httpCode << ")";
     qDebug() << "Error Text            :" << athleteMetrics.errorText;
-    qDebug() << "HRV available         :" << athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
-    qDebug() << "User summary available:" << athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary);
+    qDebug() << "HRV available         :" << hasHrv;
+    qDebug() << "User summary available:" << hasUserSummary;
     for (auto [day, entry] : athleteMetrics.metrics.asKeyValueRange()) {
         qDebug() << "---" << day;
-        if (athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv)) {
+        if (hasHrv) {
             qDebug() << "HRV Last Night Avg:" << entry.hrv.lastNightAvg;
         }
-        if (athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary)) {
+        if (hasUserSummary) {
             qDebug() << "HR Resting Value  :" << entry.userSummary.hrRestingValue;
+            qDebug() << "BB Max Value      :" << entry.userSummary.bbMaxValue;
         }
     }
 
