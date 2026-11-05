@@ -72,38 +72,30 @@ main
         qDebug() << "data      :" << download.data.size();
     }
 
-    qDebug() << "=== HRV"
+    GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Hrv | GarminPersonalAPI::UserSummary);
+    qDebug() << "=== Athlete Metrics"
              << locale.toString(firstDate, QLocale::NarrowFormat)
              << "-"
              << locale.toString(lastDate, QLocale::NarrowFormat);
-    GarminPersonalAPI::HrvListing hrvListing = garminPersonalAPI.hrvService(firstDate, lastDate);
-    qDebug() << "Failure   :" << static_cast<int>(hrvListing.failure);
-    qDebug() << "Transport :" << hrvListing.transportError << "(" << hrvListing.httpCode << ")";
-    qDebug() << "Error Text:" << hrvListing.errorText;
-    for (const GarminPersonalAPI::HrvEntry &entry : hrvListing.hrvEntries) {
-        qDebug() << "---" << entry.day;
-        qDebug() << "Last Night Avg:" << entry.lastNightAvg;
+    qDebug() << "Failure               :" << static_cast<int>(athleteMetrics.failure);
+    qDebug() << "Transport             :" << athleteMetrics.transportError << "(" << athleteMetrics.httpCode << ")";
+    qDebug() << "Error Text            :" << athleteMetrics.errorText;
+    qDebug() << "HRV available         :" << athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
+    qDebug() << "User summary available:" << athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary);
+    for (auto [day, entry] : athleteMetrics.metrics.asKeyValueRange()) {
+        qDebug() << "---" << day;
+        if (athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv)) {
+            qDebug() << "HRV Last Night Avg:" << entry.hrv.lastNightAvg;
+        }
+        if (athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary)) {
+            qDebug() << "HR Resting Value  :" << entry.userSummary.hrRestingValue;
+        }
     }
 
-    qDebug() << "=== User Summary"
-             << locale.toString(firstDate, QLocale::NarrowFormat)
-             << "-"
-             << locale.toString(lastDate, QLocale::NarrowFormat);
-    GarminPersonalAPI::UserSummaryListing userSummaryListing = garminPersonalAPI.userSummaryService(firstDate, lastDate);
-    qDebug() << "Failure   :" << static_cast<int>(userSummaryListing.failure);
-    qDebug() << "Transport :" << userSummaryListing.transportError << "(" << userSummaryListing.httpCode << ")";
-    qDebug() << "Error Text:" << userSummaryListing.errorText;
-    for (const GarminPersonalAPI::UserSummaryEntry &entry : userSummaryListing.userSummaryEntries) {
-        qDebug() << "---" << entry.day;
-        qDebug() << "Resting Value:" << entry.hrRestingValue;
-    }
-
-#if 0
     qDebug() << "=== Credentials";
     qDebug() << "Access Token:" << garminPersonalAPI.getAccessToken();
     qDebug() << "Last Refresh:" << locale.toString(garminPersonalAPI.getTokenLastRefresh(), QLocale::NarrowFormat);
     qDebug() << "Token Expiry:" << locale.toString(garminPersonalAPI.getTokenExpiry(), QLocale::NarrowFormat);
-#endif
 
     return 0;
 }

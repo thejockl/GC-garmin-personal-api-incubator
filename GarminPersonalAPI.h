@@ -98,22 +98,38 @@ public:
     };
 
     struct HrvEntry {
-        QDate day;
         int lastNightAvg = 0;
     };
 
     struct HrvListing : public BasicReply {
-        QList<HrvEntry> hrvEntries;
+        QMap<QDate, HrvEntry> hrvEntries;
     };
 
     struct UserSummaryEntry {
-        QDate day;
         int hrRestingValue = 0;
     };
 
     struct UserSummaryListing : public BasicReply {
-        QList<UserSummaryEntry> userSummaryEntries;
+        QMap<QDate, UserSummaryEntry> userSummaryEntries;
     };
+
+    enum Metric {
+        NoData = 0x0,
+        Hrv = 0x1,
+        UserSummary = 0x2,
+    };
+    Q_DECLARE_FLAGS(Metrics, Metric)
+
+    struct AthleteMetrics {
+        HrvEntry hrv;
+        UserSummaryEntry userSummary;
+    };
+
+    struct AthleteMetricsListing : public BasicReply {
+        Metrics availableMetrics;
+        QMap<QDate, AthleteMetrics> metrics;
+    };
+
 
     explicit GarminPersonalAPI(const QString &key, const QString &token = QString(), const QDateTime &tokenLastRefresh = QDateTime(), QObject *parent = nullptr);
 
@@ -122,6 +138,9 @@ public:
     ActivityDownload downloadService(const QString &activityId);
     HrvListing hrvService(const QDate &startDate, const QDate &endDate);
     UserSummaryListing userSummaryService(const QDate &startDate, const QDate &endDate);
+
+    // Combined athlete metrics
+    AthleteMetricsListing athleteMetrics(const QDate &startDate, const QDate &endDate, Metrics metrics);
 
     QString getAccessToken() const;
     QDateTime getTokenLastRefresh() const;
@@ -170,5 +189,7 @@ private:
 
     bool requestInProgress = false;
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(GarminPersonalAPI::Metrics)
 
 #endif

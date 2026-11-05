@@ -81,11 +81,27 @@ namespace {
     }
 
 
+    QString
+    dateToString
+    (const QDate &date)
+    {
+        return date.toString("yyyy-MM-dd");
+    }
+
+
+    QDate
+    dateFromString
+    (const QString &text)
+    {
+        return QDate::fromString(text, "yyyy-MM-dd");
+    }
+
+
     bool
     splitDateTime
     (const QString &text, QDate &date, QTime &time)
     {
-        date = QDate::fromString(text.left(10), "yyyy-MM-dd");
+        date = dateFromString(text.left(10));
         time = QTime::fromString(text.mid(11), "HH:mm:ss");
         return date.isValid() && time.isValid();
     }
@@ -216,8 +232,8 @@ GarminPersonalAPI::activityListService
     QMap<QString, QString> query;
     query.insert("limit", QString::number(listLimit));
     query.insert("start", QString::number(static_cast<qint64>(ret.page) * listLimit));
-    query.insert("startDate", startDate.toString("yyyy-MM-dd"));
-    query.insert("endDate", endDate.toString("yyyy-MM-dd"));
+    query.insert("startDate", dateToString(startDate));
+    query.insert("endDate", dateToString(endDate));
     query.insert("sortOrder", "asc");
 
     const QString expectedContentType = "application/json";
@@ -334,7 +350,7 @@ GarminPersonalAPI::hrvService
     QMap<QString, QString> query;
 
     const QString expectedContentType = "application/json";
-    const HttpReply reply = getService(QString(hrvServicePath).arg(startDate.toString("yyyy-MM-dd"), endDate.toString("yyyy-MM-dd")), query, listTimeoutMS, expectedContentType);
+    const HttpReply reply = getService(QString(hrvServicePath).arg(dateToString(startDate), dateToString(endDate)), query, listTimeoutMS, expectedContentType);
     static_cast<BasicReply &>(ret) = reply;
     if (ret.hasError()) {
         return ret;
@@ -361,14 +377,14 @@ GarminPersonalAPI::hrvService
     for (const QJsonValue &value : hrvArray) {
         const QJsonObject dayObj = value.toObject();
 
+        QDate day = dateFromString(dayObj.value("calendarDate").toString());
         HrvEntry hrvEntry;
-        hrvEntry.day = QDate::fromString(dayObj.value("calendarDate").toString(), "yyyy-MM-dd");
         hrvEntry.lastNightAvg = dayObj.value("lastNightAvg").toInteger();
-        if (   hrvEntry.day.isValid()
-            && hrvEntry.day >= startDate
-            && hrvEntry.day <= endDate
+        if (   day.isValid()
+            && day >= startDate
+            && day <= endDate
             && hrvEntry.lastNightAvg > 0) {
-            ret.hrvEntries << hrvEntry;
+            ret.hrvEntries.insert(day, hrvEntry);
         }
     }
 
@@ -396,8 +412,8 @@ GarminPersonalAPI::userSummaryService
     }
 
     QMap<QString, QString> query;
-    query.insert("startDate", startDate.toString("yyyy-MM-dd"));
-    query.insert("endDate", endDate.toString("yyyy-MM-dd"));
+    query.insert("startDate", dateToString(startDate));
+    query.insert("endDate", dateToString(endDate));
 
     const QString expectedContentType = "application/json";
     const HttpReply reply = getService(userSummaryServicePath, query, listTimeoutMS, expectedContentType);
@@ -428,17 +444,46 @@ GarminPersonalAPI::userSummaryService
         const QJsonObject dayObj = value.toObject();
         const QJsonObject hrObj = dayObj.value("heartRate").toObject();
 
+        QDate day = dateFromString(dayObj.value("calendarDate").toString());
         UserSummaryEntry userSummaryEntry;
-        userSummaryEntry.day = QDate::fromString(dayObj.value("calendarDate").toString(), "yyyy-MM-dd");
         userSummaryEntry.hrRestingValue = hrObj.value("restingValue").toInteger();
-        if (   userSummaryEntry.day.isValid()
-            && userSummaryEntry.day >= startDate
-            && userSummaryEntry.day <= endDate
+        if (   day.isValid()
+            && day >= startDate
+            && day <= endDate
             && userSummaryEntry.hrRestingValue > 0) {
-            ret.userSummaryEntries << userSummaryEntry;
+            ret.userSummaryEntries.insert(day, userSummaryEntry);
         }
     }
 
+    return ret;
+}
+
+
+GarminPersonalAPI::AthleteMetricsListing
+GarminPersonalAPI::athleteMetrics
+(const QDate &startDate, const QDate &endDate, Metrics metrics)
+{
+    AthleteMetricsListing ret;
+    if (ret.failure == Failure::None && metrics.testFlag(Metric::Hrv)) {
+        HrvListing hrvListing = hrvService(startDate, endDate);
+        static_cast<BasicReply &>(ret) = hrvListing;
+        if (hrvListing.failure == Failure::None) {
+            ret.availableMetrics |= Metric::Hrv;
+            for (auto [day, hrv] : hrvListing.hrvEntries.asKeyValueRange()) {
+                ret.metrics[day].hrv = hrv;
+            }
+        }
+    }
+    if (ret.failure == Failure::None && metrics.testFlag(Metric::UserSummary)) {
+        UserSummaryListing userSummaryListing = userSummaryService(startDate, endDate);
+        static_cast<BasicReply &>(ret) = userSummaryListing;
+        if (userSummaryListing.failure == Failure::None) {
+            ret.availableMetrics |= Metric::UserSummary;
+            for (auto [day, userSummary] : userSummaryListing.userSummaryEntries.asKeyValueRange()) {
+                ret.metrics[day].userSummary = userSummary;
+            }
+        }
+    }
     return ret;
 }
 
