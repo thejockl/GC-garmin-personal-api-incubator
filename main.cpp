@@ -74,9 +74,10 @@ main
     }
 #endif
 
-    GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Hrv | GarminPersonalAPI::UserSummary);
+    GarminPersonalAPI::AthleteMetricsListing athleteMetrics = garminPersonalAPI.athleteMetrics(firstDate, lastDate, GarminPersonalAPI::Sleep);
     bool hasHrv = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Hrv);
     bool hasUserSummary = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::UserSummary);
+    bool hasSleep = athleteMetrics.availableMetrics.testFlag(GarminPersonalAPI::Sleep);
     qDebug() << "=== Athlete Metrics"
              << locale.toString(firstDate, QLocale::NarrowFormat)
              << "-"
@@ -86,6 +87,7 @@ main
     qDebug() << "Error Text            :" << athleteMetrics.errorText;
     qDebug() << "HRV available         :" << hasHrv;
     qDebug() << "User summary available:" << hasUserSummary;
+    qDebug() << "Sleep available       :" << hasSleep;
     for (auto [day, entry] : athleteMetrics.metrics.asKeyValueRange()) {
         qDebug() << "---" << day;
         if (hasHrv) {
@@ -126,6 +128,20 @@ main
             qDebug() << "Mov floors desc goal :" << entry.userSummary.movFloorsDescGoal;
             qDebug() << "Mov floors desc      :" << entry.userSummary.movFloorsDesc;
             qDebug() << "Mov floors desc dist :" << entry.userSummary.movFloorsDescDist;
+        }
+        if (hasSleep) {
+            qDebug() << "Sleep unmeasurable   :" << entry.sleep.unmeasurableSleep;
+            qDebug() << "Sleep deep           :" << entry.sleep.deepSleep;
+            qDebug() << "Sleep light          :" << entry.sleep.lightSleep;
+            qDebug() << "Sleep REM            :" << entry.sleep.remSleep;
+            qDebug() << "Sleep awake          :" << entry.sleep.awakeSleep;
+            qDebug() << "Sleep avg resp       :" << entry.sleep.avgRespiration;
+            qDebug() << "Sleep lowest resp    :" << entry.sleep.lowestRespiration;
+            qDebug() << "Sleep highest resp   :" << entry.sleep.highestRespiration;
+            qDebug() << "Sleep awake count    :" << entry.sleep.awakeCount;
+            qDebug() << "Sleep avg stress     :" << entry.sleep.avgSleepStress;
+            qDebug() << "Sleep avg hr         :" << entry.sleep.avgHR;
+            qDebug() << "Sleep Score          :" << entry.sleep.scoreOverall;
         }
     }
 

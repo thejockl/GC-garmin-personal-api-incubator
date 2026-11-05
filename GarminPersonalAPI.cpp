@@ -44,6 +44,7 @@ namespace {
     const char * const downloadServicePath = "download-service/files/activity/";
     const char * const hrvServicePath = "hrv-service/hrv/daily/%1/%2";
     const char * const userSummaryServicePath = "usersummary-service/v2/dailysummaries";
+    const char * const sleepServicePath = "sleep-service/sleep/dailySleepSummariesByDate";
 
     class BusyGuard
     {
@@ -507,6 +508,89 @@ GarminPersonalAPI::userSummaryService
 }
 
 
+GarminPersonalAPI::SleepListing
+GarminPersonalAPI::sleepService
+(const QDate &startDate, const QDate &endDate)
+{
+    SleepListing ret;
+
+    BusyGuard guard(requestInProgress);
+    if (! guard.acquired()) {
+        ret.fail(Failure::Busy, tr("Another Garmin request is already in progress"));
+        return ret;
+    }
+
+    if (   ! startDate.isValid()
+        || ! endDate.isValid()
+        || startDate > endDate) {
+        ret.fail(Failure::InvalidArgument, tr("Invalid date range"));
+        return ret;
+    }
+
+    QMap<QString, QString> query;
+    query.insert("startDate", dateToString(startDate));
+    query.insert("endDate", dateToString(endDate));
+
+    const QString expectedContentType = "application/json";
+    const HttpReply reply = getService(sleepServicePath, query, listTimeoutMS, expectedContentType);
+    static_cast<BasicReply &>(ret) = reply;
+    if (ret.hasError()) {
+        return ret;
+    }
+
+    if (! contentTypeIs(reply.contentType, expectedContentType)) {
+        ret.fail(Failure::InvalidReply, tr("Unexpected content type in reply: %1").arg(reply.contentType));
+        return ret;
+    }
+
+    QJsonParseError jsonError;
+    const QJsonDocument jsonDoc = QJsonDocument::fromJson(reply.data, &jsonError);
+    if (jsonError.error != QJsonParseError::NoError) {
+        ret.fail(Failure::InvalidReply, tr("Failed to parse JSON: %1").arg(jsonError.errorString()));
+        return ret;
+    }
+    if (! jsonDoc.isArray()) {
+        ret.fail(Failure::InvalidReply, tr("Invalid JSON: expected an array of sleep summaries"));
+        return ret;
+    }
+
+    const QJsonArray sleepArray = jsonDoc.array();
+    for (const QJsonValue &value : sleepArray) {
+        const QJsonObject dayObj = value.toObject();
+        const QJsonObject scObj = dayObj.value("sleepScores").toObject();
+        const QJsonObject scOvObj = scObj.value("overall").toObject();
+        qDebug() << "sleepScores" << scObj;
+        qDebug() << "sleepScore overall" << scOvObj;
+
+        QDate day = dateFromString(dayObj.value("calendarDate").toString());
+        SleepEntry sleepEntry;
+
+        sleepEntry.unmeasurableSleep = dayObj.value("unmeasurableSleepSeconds").toInteger();
+        sleepEntry.deepSleep = dayObj.value("deepSleepSeconds").toInteger();
+        sleepEntry.lightSleep = dayObj.value("lightSleepSeconds").toInteger();
+        sleepEntry.remSleep = dayObj.value("remSleepSeconds").toInteger();
+        sleepEntry.awakeSleep = dayObj.value("awakeSleepSeconds").toInteger();
+
+        sleepEntry.avgRespiration = dayObj.value("averageRespirationValue").toInteger();
+        sleepEntry.lowestRespiration = dayObj.value("lowestRespirationValue").toInteger();
+        sleepEntry.highestRespiration = dayObj.value("highestRespirationValue").toInteger();
+        sleepEntry.awakeCount = dayObj.value("awakeCount").toInteger();
+        sleepEntry.avgSleepStress = dayObj.value("avgSleepStress").toInteger();
+        sleepEntry.avgHR = dayObj.value("avgHeartRate").toInteger();
+
+        sleepEntry.scoreOverall = scOvObj.value("value").toInteger();
+
+        if (   day.isValid()
+            && day >= startDate
+            && day <= endDate) {
+            ret.sleepEntries.insert(day, sleepEntry);
+        }
+    }
+
+    return ret;
+}
+
+
 GarminPersonalAPI::AthleteMetricsListing
 GarminPersonalAPI::athleteMetrics
 (const QDate &startDate, const QDate &endDate, Metrics metrics)
@@ -529,6 +613,16 @@ GarminPersonalAPI::athleteMetrics
             ret.availableMetrics |= Metric::UserSummary;
             for (auto [day, userSummary] : userSummaryListing.userSummaryEntries.asKeyValueRange()) {
                 ret.metrics[day].userSummary = userSummary;
+            }
+        }
+    }
+    if (ret.failure == Failure::None && metrics.testFlag(Metric::Sleep)) {
+        SleepListing sleepListing = sleepService(startDate, endDate);
+        static_cast<BasicReply &>(ret) = sleepListing;
+        if (sleepListing.failure == Failure::None) {
+            ret.availableMetrics |= Metric::Sleep;
+            for (auto [day, sleep] : sleepListing.sleepEntries.asKeyValueRange()) {
+                ret.metrics[day].sleep = sleep;
             }
         }
     }

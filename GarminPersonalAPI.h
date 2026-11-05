@@ -157,16 +157,39 @@ public:
         QMap<QDate, UserSummaryEntry> userSummaryEntries;
     };
 
+    struct SleepEntry {
+        int unmeasurableSleep = 0;  // seconds
+        int deepSleep = 0;          // seconds
+        int lightSleep = 0;         // seconds
+        int remSleep = 0;           // seconds
+        int awakeSleep = 0;         // seconds
+
+        int avgRespiration = 0;
+        int lowestRespiration = 0;
+        int highestRespiration = 0;
+        int awakeCount = 0;
+        int avgSleepStress = 0;
+        int avgHR = 0;
+
+        int scoreOverall = 0;
+    };
+
+    struct SleepListing : public BasicReply {
+        QMap<QDate, SleepEntry> sleepEntries;
+    };
+
     enum Metric {
         NoData = 0x0,
         Hrv = 0x1,
         UserSummary = 0x2,
+        Sleep = 0x4,
     };
     Q_DECLARE_FLAGS(Metrics, Metric)
 
     struct AthleteMetrics {
         HrvEntry hrv;
         UserSummaryEntry userSummary;
+        SleepEntry sleep;
     };
 
     struct AthleteMetricsListing : public BasicReply {
@@ -182,6 +205,7 @@ public:
     ActivityDownload downloadService(const QString &activityId);
     HrvListing hrvService(const QDate &startDate, const QDate &endDate);
     UserSummaryListing userSummaryService(const QDate &startDate, const QDate &endDate);
+    SleepListing sleepService(const QDate &startDate, const QDate &endDate);
 
     // Combined athlete metrics
     AthleteMetricsListing athleteMetrics(const QDate &startDate, const QDate &endDate, Metrics metrics);
