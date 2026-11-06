@@ -308,7 +308,7 @@ GarminPersonalAPI::downloadService
 
     static const QRegularExpression idPattern("^[0-9]{5,15}$");
     if (! idPattern.match(activityId).hasMatch()) {
-        ret.fail(Failure::InvalidArgument, tr("Invalid activity id"));
+        ret.fail(Failure::InvalidArgument, tr("Invalid activity id: '%1'").arg(activityId.chopped(50)));
         return ret;
     }
 
