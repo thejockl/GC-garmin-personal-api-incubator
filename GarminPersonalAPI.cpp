@@ -265,7 +265,7 @@ GarminPersonalAPI::activityListService
     for (const QJsonValue &value : jsonArr) {
         const QJsonObject activityObj = value.toObject();
 
-        const qint64 id = activityObj.value("activityId").toInt();
+        const qint64 id = activityObj.value("activityId").toInteger();
         if (id <= 0) {
             qWarning() << "Garmin activity listing: skipping entry without activityId";
             continue;
